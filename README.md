@@ -20,5 +20,5 @@ The Iwan API specification assumes the use of the HTTP protocol for transmitting
 }
 ```
 
-> [!IMPORTANT]
-> If no namespace specified for the page **it's namespace needs to be named as "global"!
+> [!CAUTION]
+> If no namespace specified for the page **it's namespace needs to be named as "global"!**
