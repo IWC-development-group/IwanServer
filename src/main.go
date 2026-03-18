@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"fmt"
+	"path/filepath"
 
 	"database/sql"
     _ "github.com/ncruces/go-sqlite3/embed"
@@ -24,7 +25,11 @@ func main() {
 		os.Exit(0)
 	}
 
-	db, err := sql.Open("sqlite3", "page_registry.db")
+	execPath, _ := os.Executable()
+	dbPath := filepath.Join(filepath.Dir(execPath), "page_registry.db")
+	fmt.Printf("DB path: %s\n", dbPath)
+
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil { panic(err) }
 	defer db.Close()
 

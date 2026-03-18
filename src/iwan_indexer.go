@@ -28,6 +28,10 @@ func (page *IwanPage) SetupInfo(path string, fileInfo fs.FileInfo, namespace str
 	page.Path = path
 }
 
+func (page *IwanPage) GetFullName() string {
+	return page.Namespace + "/" + page.Name
+}
+
 func IsMarkdown(filename string) bool {
 	extension := strings.ToLower(filepath.Ext(filename))
 	return extension == ".md" || extension == ".markdown" || extension == ".mdown"
@@ -74,7 +78,7 @@ func CreateIndex(db *sql.DB, pageInfo *IwanPage) {
 		panic(err)
 	}
 
-	fmt.Printf("Page \"%s\" created!\n", pageInfo.Path)
+	fmt.Printf("Page \"%s\" added!\n", pageInfo.GetFullName())
 }
 
 func ProcessPages(db *sql.DB, root string, namespace string) (int, int, error) {
@@ -83,11 +87,8 @@ func ProcessPages(db *sql.DB, root string, namespace string) (int, int, error) {
 
 	err := filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil { return nil }
-		if !info.IsDir() { return nil }
 
-		if IsIndexHint(info.Name()) {
-			fmt.Println("Found index hint")
-		} else if IsMarkdown(path) {
+		if !info.IsDir() && IsMarkdown(path) {
 			page := &IwanPage{}
 			page.SetupInfo(path, info, namespace)
 			
@@ -96,7 +97,6 @@ func ProcessPages(db *sql.DB, root string, namespace string) (int, int, error) {
 				panic(err) 
 			}
 			if !exists { 
-				fmt.Printf("Adding %s\n", info.Name())
 				CreateIndex(db, page)
 				createdCount++
 			}

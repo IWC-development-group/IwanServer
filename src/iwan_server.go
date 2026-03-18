@@ -63,6 +63,8 @@ func PageHandler(w http.ResponseWriter, r *http.Request) {
 
 func ServerMain(db *sql.DB, argOffset int) {
 	port := os.Args[argOffset + 1]
+
+	fmt.Println("Started!")
 	http.HandleFunc("/", PageHandler)
 	http.ListenAndServe(":" + port, nil)
 }
