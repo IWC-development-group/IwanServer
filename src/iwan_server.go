@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"net/http"
 //	"net/url"
+
+    "database/sql"
 )
 
 type IwanResponse struct {
@@ -59,7 +61,7 @@ func PageHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, string(jsonReq))
 }
 
-func ServerMain(argOffset int) {
+func ServerMain(db *sql.DB, argOffset int) {
 	port := os.Args[argOffset + 1]
 	http.HandleFunc("/", PageHandler)
 	http.ListenAndServe(":" + port, nil)

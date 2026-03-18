@@ -1,12 +1,12 @@
 package main
 import (
-    "database/sql"
     "fmt"
     "strings"
     "io/fs"
     "path/filepath"
     "os"
 
+    "database/sql"
     _ "github.com/ncruces/go-sqlite3/embed"
     _ "github.com/ncruces/go-sqlite3/driver"
 )
@@ -33,8 +33,8 @@ func IsMarkdown(filename string) bool {
 	return extension == ".md" || extension == ".markdown" || extension == ".mdown"
 }
 
-func IsIndexHint(filename stirng) bool {
-	extesnion := string.ToLower(filepath.Ext(filename))
+func IsIndexHint(filename string) bool {
+	extension := strings.ToLower(filepath.Ext(filename))
 	return extension == ".iwan"
 }
 
@@ -86,7 +86,7 @@ func ProcessPages(db *sql.DB, root string, namespace string) (int, int, error) {
 		if !info.IsDir() { return nil }
 
 		if IsIndexHint(info.Name()) {
-			fmt.Prinln("Found index hint")
+			fmt.Println("Found index hint")
 		} else if IsMarkdown(path) {
 			page := &IwanPage{}
 			page.SetupInfo(path, info, namespace)
@@ -114,7 +114,7 @@ func ProcessPages(db *sql.DB, root string, namespace string) (int, int, error) {
 	}
 }
 
-func IndexerMain(db *sql.DB, DBargOffset int) {
+func IndexerMain(db *sql.DB, argOffset int) {
 	root, absErr := filepath.Abs(os.Args[argOffset + 1])
 	if absErr != nil { panic(absErr) }
 

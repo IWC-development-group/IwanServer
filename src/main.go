@@ -3,12 +3,18 @@ package main
 import (
 	"os"
 	"fmt"
+
+	"database/sql"
+    _ "github.com/ncruces/go-sqlite3/embed"
+    _ "github.com/ncruces/go-sqlite3/driver"
 )
 
+type ModuleFunc func(db *sql.DB, argOffset int)
+
 func main() {
-	var commands map[string]func() {
-		"serve": ServerMain
-		"index": IndexerMain
+	commands := map[string]ModuleFunc{
+		"serve": ServerMain,
+		"index": IndexerMain,
 	}
 
 	moduleName := os.Args[1]
@@ -23,4 +29,5 @@ func main() {
 	defer db.Close()
 
 	fn(db, 1)
+	db.Close()
 }
