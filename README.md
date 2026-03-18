@@ -19,3 +19,6 @@ The Iwan API specification assumes the use of the HTTP protocol for transmitting
 	"content" : "page content (OR error description)"
 }
 ```
+
+> [!IMPORTANT]
+> If no namespace specified for the page **it's namespace needs to be named as "global"!
