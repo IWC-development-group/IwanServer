@@ -115,10 +115,21 @@ func ProcessPages(db *sql.DB, root string, namespace string) (int, int, error) {
 }
 
 func IndexerMain(db *sql.DB, argOffset int) {
+	if len(os.Args) - 1 < argOffset + 1 {
+		fmt.Println("No such args!")
+		os.Exit(0)
+	}
+
 	root, absErr := filepath.Abs(os.Args[argOffset + 1])
 	if absErr != nil { panic(absErr) }
 
-	namespace := os.Args[argOffset + 2]
+	var namespace string
+	if len(os.Args) - 1 >= argOffset + 2 {
+		namespace = os.Args[argOffset + 2]
+	} else {
+		namespace = "global"
+		fmt.Println("No namespace specified so set it to global.")
+	}
 
 	InitPagesTable(db)
 	processedCount, createdCount, err := ProcessPages(db, root, namespace)

@@ -27,7 +27,7 @@ func main() {
 
 	execPath, _ := os.Executable()
 	dbPath := filepath.Join(filepath.Dir(execPath), "page_registry.db")
-	fmt.Printf("DB path: %s\n", dbPath)
+//	fmt.Printf("DB path: %s\n", dbPath)
 
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil { panic(err) }
