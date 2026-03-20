@@ -25,7 +25,24 @@ func SetErrorDescription(response *IwanResponse, message string) []byte {
 	return jsonReq
 }
 
-func PageHandler(w http.ResponseWriter, r *http.Request) {
+func GetPagePath(db *sql.DB, page *IwanPage) (string, error) {
+	var path string
+	err := db.QueryRow("SELECT path FROM Pages WHERE name = ? AND namespace = ?",
+		page.Name, page.Namespace).Scan(&path)
+
+	fmt.Printf("Using name: %s and namespace %s. Found: %s\n", page.Name, page.Namespace, path)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", err
+	}
+
+	return path, nil
+}
+
+func PageHandler(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	response := IwanResponse {
@@ -35,20 +52,37 @@ func PageHandler(w http.ResponseWriter, r *http.Request) {
 		Content: "none",
 	}
 
-	pageName := r.URL.Query().Get("name")
-	fmt.Println("Client requested " + pageName)
+	pageFullName := r.URL.Query().Get("name")
+	fmt.Println("Client requested " + pageFullName)
 
-	if pageName == "" {
+	if pageFullName == "" {
 		jsonReq := SetErrorDescription(&response, "Page is unspecified!")
 		w.Write(jsonReq)
 		return
 	}
 
-	response.Name = pageName
+	var page IwanPage
+	page.SetupInfoFromFullName("", pageFullName)
+	path, pathErr := GetPagePath(db, &page)
+	page.Path = path
 
-	content, err := os.ReadFile(pageName)
-	if err != nil {
+	response.Name = page.Name
+	response.Namespace = page.Namespace
+
+	if pathErr != nil {
+		jsonReq := SetErrorDescription(&response, "Something went wrong when searching for the page.")
+		w.Write(jsonReq)
+		panic(pathErr)
+		return
+	} else if page.Path == "" {
 		jsonReq := SetErrorDescription(&response, "Page not found!")
+		w.Write(jsonReq)
+		return
+	}
+
+	content, err := page.GetContent()
+	if err != nil {
+		jsonReq := SetErrorDescription(&response, "Page indexed but not exists!")
 		w.Write(jsonReq)
 		return
 	}
@@ -65,6 +99,8 @@ func ServerMain(db *sql.DB, argOffset int) {
 	port := os.Args[argOffset + 1]
 
 	fmt.Println("Started!")
-	http.HandleFunc("/", PageHandler)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		PageHandler(db, w, r)
+	})
 	http.ListenAndServe(":" + port, nil)
 }
