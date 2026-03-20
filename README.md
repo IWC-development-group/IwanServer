@@ -22,3 +22,15 @@ The Iwan API specification assumes the use of the HTTP protocol for transmitting
 
 > [!CAUTION]
 > If no namespace specified for the page **it's namespace needs to be named as "global"!**
+
+# Usage
+Host the server with specified port:
+```
+iwans serve [port]
+```
+
+Add manuals to the server database:
+```
+iwans index [manuals_directory] [namespace name]
+```
+If no namespace specified it will use "global" by default.
