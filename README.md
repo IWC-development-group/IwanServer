@@ -19,18 +19,20 @@ The Iwan API specification assumes the use of the HTTP protocol for transmitting
 	"content" : "page content (OR error description)"
 }
 ```
-
+---
 > [!CAUTION]
 > If no namespace specified for the page **it's namespace needs to be named as "global"!**
 
 # Usage
 Host the server with specified port:
 ```
-iwans serve [port]
+iwans serve -p [port]
 ```
 
-Add manuals to the server database:
+Add manuals to the server's database:
 ```
-iwans index [manuals_directory] [namespace name]
+iwans index [manuals_directory] -n [namespace_name]
 ```
 If no namespace specified it will use "global" by default.
+
+Type `iwans -h` for details.
