@@ -3,6 +3,7 @@ package main
 import (
 //	"os"
 	"fmt"
+	"strconv"
 //	"bytes"
 	"encoding/json"
 	"net/http"
@@ -110,5 +111,7 @@ func ServerMain(db *sql.DB, port int) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		PageHandler(db, w, r)
 	})
-	http.ListenAndServe(":" + string(port), nil)
+
+	addr := ":" + strconv.Itoa(port)
+	http.ListenAndServe(addr, nil)
 }

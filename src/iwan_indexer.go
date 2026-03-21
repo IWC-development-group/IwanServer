@@ -22,6 +22,10 @@ type IwanIndexHint struct {
 	Namespace string
 }
 
+func (hint *IwanIndexHint) ToString() string {
+	return "[" + hint.Namespace + ": " + hint.Dir + "]"
+}
+
 func IsMarkdown(filename string) bool {
 	extension := strings.ToLower(filepath.Ext(filename))
 	return extension == ".md" || extension == ".markdown" || extension == ".mdown"
@@ -89,13 +93,20 @@ func CreateIndex(db *sql.DB, pageInfo *IwanPage) {
 func ProcessPages(db *sql.DB, root string, namespace string, forced bool) (int, int, error) {
 	processedCount := 0
 	createdCount := 0
+	firstRoot := true
 
 	err := filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil { return nil }
 
 		if !forced && info.IsDir() {
 			hint := GetIndexHint(path)
-			if hint.Namespace != "" { return nil }
+
+			if firstRoot {
+				firstRoot = false
+			} else if hint.Namespace != "" {
+				fmt.Printf("Traped on hinted directory: %s\n", path)
+				return filepath.SkipDir
+			}
 		}
 
 		if !info.IsDir() && IsMarkdown(path) {
@@ -121,33 +132,40 @@ func ProcessPages(db *sql.DB, root string, namespace string, forced bool) (int, 
 	return processedCount, createdCount, nil
 }
 
-func CollectHints(root string) ([]IwanIndexHint, error) {
-	var hints []IwanIndexHint
-
+func CollectHints(hints *[]IwanIndexHint, root string) error {
 	err := filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if !info.IsDir() || err != nil { return nil }
 
 		hint := GetIndexHint(path)
 		if hint.Namespace != "" {
-			hints = append(hints, hint)
+			*hints = append(*hints, hint)
 		}
 
 		return nil
 	})
 
-	return hints, err
+	return err
 }
 
 func RunIndexing(db *sql.DB, root string, namespace string) (int, int, error) {
-	hints, err := CollectHints(root)
+	var hints []IwanIndexHint
+	hints = append(hints, IwanIndexHint{root, namespace})
+	err := CollectHints(&hints, root)
 	if err != nil { return 0, 0, err }
 	fmt.Printf("Hints collected: %d\n", len(hints))
+
+	if len(hints) <= 1 {
+		processedCount, createdCount, err := ProcessPages(db, root, namespace, true)
+		if err != nil { return 0, 0, err }
+		return processedCount, createdCount, nil
+	}
 
 	totalProcessed := 0
 	totalCreated := 0
 
 	for _, hint := range hints {
-		processedCount, createdCount, err := ProcessPages(db, hint.Dir, namespace, false)
+		fmt.Printf("Using hint: %s\n", hint.ToString())
+		processedCount, createdCount, err := ProcessPages(db, hint.Dir, hint.Namespace, false)
 		if err != nil { return 0, 0, err }
 
 		totalProcessed += processedCount
@@ -162,7 +180,16 @@ func IndexerMain(db *sql.DB, path string, namespace string, forced bool) {
 	if absErr != nil { panic(absErr) }
 
 	InitPagesTable(db)
-	processedCount, createdCount, err := ProcessPages(db, root, namespace, true)
+
+	var processedCount int
+	var createdCount int
+	var err error
+
+	if !forced {
+		processedCount, createdCount, err = RunIndexing(db, root, namespace)
+	} else {
+		processedCount, createdCount, err = ProcessPages(db, root, namespace, true)
+	}
 
 	if err != nil {
 		panic(err)

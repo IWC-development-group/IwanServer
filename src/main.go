@@ -12,8 +12,6 @@ import (
 )
 
 type ModuleFunc func(db *sql.DB, argOffset int)
-type CobraCallbackErr func(cmd *cobra.Command, args []string) error
-type CobraCallback func(cmd *cobra.Command, args []string)
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -54,8 +52,8 @@ func main() {
 			IndexerMain(db, path, namespace, forced)
 		},
 	}
-	indexCmd.Flags().StringVarP(&namespace, "namespace", "ns", "global", "Documentation namespace")
-	indexCmd.Flags().BoolVarP(&forced, "force-ns", "fns", false, "Force the indexer to set specified namespace")
+	indexCmd.Flags().StringVarP(&namespace, "namespace", "n", "global", "Documentation namespace")
+	indexCmd.Flags().BoolVarP(&forced, "force-ns", "f", false, "Force the indexer to ignore all hints")
 
 	rootCmd.AddCommand(serveCmd, indexCmd)
 	if err := rootCmd.Execute(); err != nil {
