@@ -25,21 +25,30 @@ func SetErrorDescription(response *IwanResponse, message string) []byte {
 	return jsonReq
 }
 
-func GetPagePath(db *sql.DB, page *IwanPage) (string, error) {
+func GetPagePath(db *sql.DB, page *IwanPage) (string, int, error) {
 	var path string
-	err := db.QueryRow("SELECT path FROM Pages WHERE name = ? AND namespace = ?",
-		page.Name, page.Namespace).Scan(&path)
+	var id int
+	err := db.QueryRow("SELECT id, path FROM Pages WHERE name = ? AND namespace = ?",
+		page.Name, page.Namespace).Scan(&id, &path)
 
-	fmt.Printf("Using name: %s and namespace %s. Found: %s\n", page.Name, page.Namespace, path)
+	fmt.Printf("Using name %s and namespace %s. Found: (%d) %s\n", page.Name, page.Namespace, id, path)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return "", nil
+			return "", 0, nil
 		}
-		return "", err
+		return "", 0, err
 	}
 
-	return path, nil
+	return path, id, nil
+}
+
+func RemovePage(db *sql.DB, id int) {
+	fmt.Println("Removing index for non-existent page")
+	_, err := db.Exec(`DELETE FROM Pages WHERE id = ?`, id)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func PageHandler(db *sql.DB, w http.ResponseWriter, r *http.Request) {
@@ -63,7 +72,7 @@ func PageHandler(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 
 	var page IwanPage
 	page.SetupInfoFromFullName("", pageFullName)
-	path, pathErr := GetPagePath(db, &page)
+	path, id, pathErr := GetPagePath(db, &page)
 	page.Path = path
 
 	response.Name = page.Name
@@ -82,6 +91,7 @@ func PageHandler(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 
 	content, err := page.GetContent()
 	if err != nil {
+		RemovePage(db, id)
 		jsonReq := SetErrorDescription(&response, "Page indexed but not exists!")
 		w.Write(jsonReq)
 		return
