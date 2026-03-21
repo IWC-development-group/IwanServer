@@ -32,7 +32,7 @@ func GetPagePath(db *sql.DB, page *IwanPage) (string, int, error) {
 	err := db.QueryRow("SELECT id, path FROM Pages WHERE name = ? AND namespace = ?",
 		page.Name, page.Namespace).Scan(&id, &path)
 
-	fmt.Printf("Using name %s and namespace %s. Found: (%d) %s\n", page.Name, page.Namespace, id, path)
+	//fmt.Printf("Using name %s and namespace %s. Found: (%d) %s\n", page.Name, page.Namespace, id, path)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -107,11 +107,11 @@ func PageHandler(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 }
 
 func ServerMain(db *sql.DB, port int) {
-	fmt.Println("Started!")
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		PageHandler(db, w, r)
 	})
 
 	addr := ":" + strconv.Itoa(port)
+	fmt.Printf("Serving on %s!\n", addr)
 	http.ListenAndServe(addr, nil)
 }
