@@ -1,7 +1,7 @@
 package main
 
 import (
-	"os"
+//	"os"
 	"fmt"
 //	"bytes"
 	"encoding/json"
@@ -105,12 +105,10 @@ func PageHandler(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, string(jsonReq))
 }
 
-func ServerMain(db *sql.DB, argOffset int) {
-	port := os.Args[argOffset + 1]
-
+func ServerMain(db *sql.DB, port int) {
 	fmt.Println("Started!")
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		PageHandler(db, w, r)
 	})
-	http.ListenAndServe(":" + port, nil)
+	http.ListenAndServe(":" + string(port), nil)
 }

@@ -3,6 +3,7 @@ import (
     "fmt"
     "strings"
     "io/fs"
+    "bufio"
     "path/filepath"
     "os"
 
@@ -16,42 +17,9 @@ func GetPureName(filename string) string {
 	return strings.TrimSuffix(filename, filepath.Ext(filename))
 }
 
-type IwanPage struct {
-	Name string
+type IwanIndexHint struct {
+	Dir string
 	Namespace string
-	Path string
-}
-
-func (page *IwanPage) SetupInfo(path string, fileInfo fs.FileInfo, namespace string) {
-	page.Name = GetPureName(fileInfo.Name())
-	page.Namespace = namespace
-	page.Path = path
-}
-
-func (page *IwanPage) SetupInfoFromFullName(path string, fullName string) {
-	components := strings.Split(fullName, "/")
-	if len(components) < 2 {
-		page.Name = fullName
-		page.Namespace = "global"
-		return
-	}
-
-	page.Name = components[1]
-	page.Namespace = components[0]
-	page.Path = path
-}
-
-func (page *IwanPage) GetFullName() string {
-	return page.Namespace + "/" + page.Name
-}
-
-func (page *IwanPage) GetContent() ([]byte, error) {
-	content, err := os.ReadFile(page.Path)
-	if err != nil {
-		return nil, err
-	}
-
-	return content, nil
 }
 
 func IsMarkdown(filename string) bool {
@@ -59,9 +27,24 @@ func IsMarkdown(filename string) bool {
 	return extension == ".md" || extension == ".markdown" || extension == ".mdown"
 }
 
-func IsIndexHint(filename string) bool {
-	extension := strings.ToLower(filepath.Ext(filename))
-	return extension == ".iwan"
+func GetIndexHint(dir string) IwanIndexHint {
+	path := dir + "/hint.iwan"
+	_, err := os.Stat(path)
+
+	if err != nil { return IwanIndexHint{"", "",} }
+
+	file, _ := os.Open(path)
+
+	scanner := bufio.NewScanner(file)
+	if !scanner.Scan() { return IwanIndexHint{"", "",} }
+
+	words := strings.Fields(scanner.Text())
+	file.Close()
+
+	var hint IwanIndexHint
+	hint.Dir = dir
+	hint.Namespace = words[0]
+	return hint
 }
 
 func InitPagesTable(db *sql.DB) {
@@ -103,12 +86,17 @@ func CreateIndex(db *sql.DB, pageInfo *IwanPage) {
 	fmt.Printf("Page \"%s\" added!\n", pageInfo.GetFullName())
 }
 
-func ProcessPages(db *sql.DB, root string, namespace string) (int, int, error) {
+func ProcessPages(db *sql.DB, root string, namespace string, forced bool) (int, int, error) {
 	processedCount := 0
 	createdCount := 0
 
 	err := filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil { return nil }
+
+		if !forced && info.IsDir() {
+			hint := GetIndexHint(path)
+			if hint.Namespace != "" { return nil }
+		}
 
 		if !info.IsDir() && IsMarkdown(path) {
 			page := &IwanPage{}
@@ -129,32 +117,52 @@ func ProcessPages(db *sql.DB, root string, namespace string) (int, int, error) {
 		return nil
 	})
 
-	if err != nil {
-		return 0, 0, err
-	} else {
-		return processedCount, createdCount, nil
-	}
+	if err != nil { return 0, 0, err }
+	return processedCount, createdCount, nil
 }
 
-func IndexerMain(db *sql.DB, argOffset int) {
-	if len(os.Args) - 1 < argOffset + 1 {
-		fmt.Println("No such args!")
-		os.Exit(0)
+func CollectHints(root string) ([]IwanIndexHint, error) {
+	var hints []IwanIndexHint
+
+	err := filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+		if !info.IsDir() || err != nil { return nil }
+
+		hint := GetIndexHint(path)
+		if hint.Namespace != "" {
+			hints = append(hints, hint)
+		}
+
+		return nil
+	})
+
+	return hints, err
+}
+
+func RunIndexing(db *sql.DB, root string, namespace string) (int, int, error) {
+	hints, err := CollectHints(root)
+	if err != nil { return 0, 0, err }
+	fmt.Printf("Hints collected: %d\n", len(hints))
+
+	totalProcessed := 0
+	totalCreated := 0
+
+	for _, hint := range hints {
+		processedCount, createdCount, err := ProcessPages(db, hint.Dir, namespace, false)
+		if err != nil { return 0, 0, err }
+
+		totalProcessed += processedCount
+		totalCreated += createdCount
 	}
 
-	root, absErr := filepath.Abs(os.Args[argOffset + 1])
+	return totalProcessed, totalCreated, nil
+}
+
+func IndexerMain(db *sql.DB, path string, namespace string, forced bool) {
+	root, absErr := filepath.Abs(path)
 	if absErr != nil { panic(absErr) }
 
-	var namespace string
-	if len(os.Args) - 1 >= argOffset + 2 {
-		namespace = os.Args[argOffset + 2]
-	} else {
-		namespace = "global"
-		fmt.Println("No namespace specified so set it to global.")
-	}
-
 	InitPagesTable(db)
-	processedCount, createdCount, err := ProcessPages(db, root, namespace)
+	processedCount, createdCount, err := ProcessPages(db, root, namespace, true)
 
 	if err != nil {
 		panic(err)
