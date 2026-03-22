@@ -24,6 +24,7 @@ The Iwan API specification assumes the use of the HTTP protocol for transmitting
 > If no namespace specified for the page **it's namespace needs to be named as "global"!**
 
 # Usage
+## Server
 Host the server with specified port:
 ```
 iwans serve -p [port]
@@ -36,3 +37,10 @@ iwans index [manuals_directory] -n [namespace_name]
 If no namespace specified it will use "global" by default.
 
 Type `iwans -h` for details.
+
+## Converter
+This project also includes a converter utility to convert HTML pages to Markdown:
+```
+iwanc [source] [destination]
+```
+It will recursively scan the `source` directory tree for HTML or XHTML files, convert them to Markdown, and place them to the `destination` path, preserving the source directory structure.
