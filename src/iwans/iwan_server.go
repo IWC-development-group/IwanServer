@@ -19,12 +19,6 @@ type IwanResponse struct {
 	Content string 		`json:"content"`
 }
 
-type IwanPageListResponse struct {
-	Status string		`json:"status"`
-	Namespace string	`json:"namespace"`
-	Pages []string		`json:"pages"`
-}
-
 func (response *IwanResponse) SetErrorDescription(message string) []byte {
 	response.Content = message
 	jsonReq, err := json.Marshal(*response)
@@ -32,8 +26,26 @@ func (response *IwanResponse) SetErrorDescription(message string) []byte {
 	return jsonReq
 }
 
+type IwanPageListResponse struct {
+	Status string		`json:"status"`
+	Namespace string	`json:"namespace"`
+	Pages []string		`json:"pages"`
+}
+
 func (response *IwanPageListResponse) SetErrorDescription(message string) []byte {
 	response.Pages[0] = message
+	jsonReq, err := json.Marshal(*response)
+	if err != nil { panic(err) }
+	return jsonReq
+}
+
+type IwanNamespaceListResponse struct {
+	Status string 		`json:"status"`
+	Namespaces []string	`json:"namespaces"`
+}
+
+func (response *IwanNamespaceListResponse) SetErrorDescription(message string) []byte {
+	response.Namespaces[0] = message
 	jsonReq, err := json.Marshal(*response)
 	if err != nil { panic(err) }
 	return jsonReq
@@ -80,6 +92,23 @@ func GetPagesByNamespace(db *sql.DB, namespace string) ([]string, error) {
 	}
 
 	return pages, nil
+}
+
+func GetNamespaces(db *sql.DB) ([]string, error) {
+	rows, err := db.Query("SELECT DISTINCT namespace FROM Pages")
+	if err != nil {
+		defer rows.Close()
+		return nil, err
+	}
+
+	var namespaces []string
+	for rows.Next() {
+		var namespace string
+		rows.Scan(&namespace)
+		namespaces = append(namespaces, namespace)
+	}
+
+	return namespaces, nil
 }
 
 func PageHandler(db *sql.DB, w http.ResponseWriter, r *http.Request) {
@@ -172,12 +201,46 @@ func PageListHandler(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, string(jsonReq))
 }
 
+func NamespaceListHandler(db *sql.DB, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	response := IwanNamespaceListResponse{
+		Status: "ERR",
+		Namespaces: []string{"none"},
+	}
+
+	fmt.Println("Client requested namespace list")
+
+	namespaces, err := GetNamespaces(db)
+	if err != nil {
+		jsonReq := response.SetErrorDescription("Something went wrong when searching for namespaces.")
+		w.Write(jsonReq)
+		return
+	}
+
+	if len(namespaces) == 0 {
+		jsonReq := response.SetErrorDescription("No namespaces found on the server!")
+		w.Write(jsonReq)
+		return
+	}
+
+	response.Status = "OK"
+	response.Namespaces = namespaces
+
+	jsonReq, err := json.Marshal(response)
+	if err != nil { panic(err) }
+	fmt.Fprintf(w, string(jsonReq))
+}
+
 func ServerMain(db *sql.DB, port int) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		PageHandler(db, w, r)
 	})
 	http.HandleFunc("/pages", func(w http.ResponseWriter, r *http.Request) {
 		PageListHandler(db, w, r)
+	})
+	http.HandleFunc("/namespaces", func(w http.ResponseWriter, r *http.Request) {
+		NamespaceListHandler(db, w, r)
 	})
 
 	addr := ":" + strconv.Itoa(port)
