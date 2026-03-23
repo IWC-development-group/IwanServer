@@ -5,12 +5,13 @@
 ## Iwan API specification
 The Iwan API specification assumes the use of the HTTP protocol for transmitting requests. It focused on simplicity so you can make own IwanAPI server using this:
 
-### Page request:
+### Page querying:
+#### Request:
 ```
 /?name=[namespace/<page name>]
 ```
 
-### Response:
+#### Response:
 ```json
 {
 	"status" : "response status (OK/ERR)",
@@ -19,9 +20,40 @@ The Iwan API specification assumes the use of the HTTP protocol for transmitting
 	"content" : "page content (OR error description)"
 }
 ```
+
 ---
 > [!CAUTION]
 > If no namespace specified for the page **it's namespace needs to be named as "global"!**
+---
+
+### Listing pages in the specified namespace
+#### Request:
+```
+/pages?namespace=[namespace name]
+```
+
+#### Response:
+```json
+{
+	"status": "response status (OK/ERR)",
+	"namespace": "actual namespace",
+	"pages": ["page1 (OR error description)", "page2", "page3", ...]
+}
+```
+
+### Listing all namespaces that contains at least one page
+#### Request:
+```
+/namespaces
+```
+
+#### Response:
+```json
+{
+	"status": "response status (OK/ERR)",
+	"namespaces": ["namespace1 (OR error description)", "namespace2", "namespace3", ...]
+}
+```
 
 # Usage
 ## Server
