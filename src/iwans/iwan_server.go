@@ -12,18 +12,22 @@ import (
     "database/sql"
 )
 
-type IwanResponse struct {
+func IwanSerialize(response any) []byte {
+	jsonReq, err := json.Marshal(response)
+	if err != nil { panic(err) }
+	return jsonReq
+}
+
+type IwanPageResponse struct {
 	Status string 		`json:"status"`
 	Name string 		`json:"name"`
 	Namespace string 	`json:"namespace"`
 	Content string 		`json:"content"`
 }
 
-func (response *IwanResponse) SetErrorDescription(message string) []byte {
+func (response *IwanPageResponse) SetErrorDescription(message string) []byte {
 	response.Content = message
-	jsonReq, err := json.Marshal(*response)
-	if err != nil { panic(err) }
-	return jsonReq
+	return IwanSerialize(*response)
 }
 
 type IwanPageListResponse struct {
@@ -34,9 +38,7 @@ type IwanPageListResponse struct {
 
 func (response *IwanPageListResponse) SetErrorDescription(message string) []byte {
 	response.Pages[0] = message
-	jsonReq, err := json.Marshal(*response)
-	if err != nil { panic(err) }
-	return jsonReq
+	return IwanSerialize(*response)
 }
 
 type IwanNamespaceListResponse struct {
@@ -46,9 +48,7 @@ type IwanNamespaceListResponse struct {
 
 func (response *IwanNamespaceListResponse) SetErrorDescription(message string) []byte {
 	response.Namespaces[0] = message
-	jsonReq, err := json.Marshal(*response)
-	if err != nil { panic(err) }
-	return jsonReq
+	return IwanSerialize(*response)
 }
 
 func GetPagePath(db *sql.DB, page *IwanPage) (string, int, error) {
@@ -114,7 +114,7 @@ func GetNamespaces(db *sql.DB) ([]string, error) {
 func PageHandler(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
-	response := IwanResponse {
+	response := IwanPageResponse {
 		Status: "ERR",
 		Name: "none",
 		Namespace: "global",
@@ -160,8 +160,7 @@ func PageHandler(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	response.Status = "OK"
 	response.Content = string(content)
 
-	jsonReq, err := json.Marshal(response)
-	if err != nil { panic(err) }
+	jsonReq := IwanSerialize(response)
 	fmt.Fprintf(w, string(jsonReq))
 }
 
@@ -196,8 +195,7 @@ func PageListHandler(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	response.Status = "OK"
 	response.Pages = pages
 
-	jsonReq, err := json.Marshal(response)
-	if err != nil { panic(err) }
+	jsonReq := IwanSerialize(response)
 	fmt.Fprintf(w, string(jsonReq))
 }
 
@@ -227,8 +225,7 @@ func NamespaceListHandler(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	response.Status = "OK"
 	response.Namespaces = namespaces
 
-	jsonReq, err := json.Marshal(response)
-	if err != nil { panic(err) }
+	jsonReq := IwanSerialize(response)
 	fmt.Fprintf(w, string(jsonReq))
 }
 
