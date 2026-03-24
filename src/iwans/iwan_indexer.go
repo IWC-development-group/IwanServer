@@ -86,14 +86,45 @@ func CreateIndex(db *sql.DB, pageInfo *IwanPage) {
 		fmt.Printf("Can't create index for page %s\n", pageInfo.Path)
 		panic(err)
 	}
+}
 
-	fmt.Printf("Page \"%s\" added!\n", pageInfo.GetFullName())
+func CreateMultipleIndex(db *sql.DB, pages *[]IwanPage) {
+	tx, err := db.Begin()
+	if err != nil {
+		panic(err)
+		return
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(`
+		INSERT INTO Pages (name, namespace, path)
+		VALUES (?, ?, ?)
+	`)
+	if err != nil {
+		panic(err)
+		return
+	}
+	defer stmt.Close()
+
+	for _, page := range *pages {
+		_, err := stmt.Exec(page.Name, page.Namespace, page.Path)
+		if err != nil {
+			panic(err)
+			return
+		}
+	}
+
+	txErr := tx.Commit()
+	if txErr != nil {
+		panic(txErr)
+	}
 }
 
 func ProcessPages(db *sql.DB, root string, namespace string, forced bool) (int, int, error) {
 	processedCount := 0
 	createdCount := 0
 	firstRoot := true
+	var pages []IwanPage
 
 	err := filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil { return nil }
@@ -104,7 +135,7 @@ func ProcessPages(db *sql.DB, root string, namespace string, forced bool) (int, 
 			if firstRoot {
 				firstRoot = false
 			} else if hint.Namespace != "" {
-				fmt.Printf("Traped on hinted directory: %s\n", path)
+				//fmt.Printf("Trapped on hinted directory: %s\n", path)
 				return filepath.SkipDir
 			}
 		}
@@ -118,8 +149,9 @@ func ProcessPages(db *sql.DB, root string, namespace string, forced bool) (int, 
 				panic(err) 
 			}
 			if !exists { 
-				CreateIndex(db, page)
+				pages = append(pages, *page)
 				createdCount++
+				fmt.Printf("\rCollecting pages: %d", createdCount)
 			}
 
 			processedCount++
@@ -127,6 +159,11 @@ func ProcessPages(db *sql.DB, root string, namespace string, forced bool) (int, 
 
 		return nil
 	})
+	fmt.Println("")
+
+	if createdCount != 0 {
+		CreateMultipleIndex(db, &pages)
+	}
 
 	if err != nil { return 0, 0, err }
 	return processedCount, createdCount, nil
@@ -196,5 +233,5 @@ func IndexerMain(db *sql.DB, path string, namespace string, forced bool) {
 	}
 	defer db.Close()
 
-	fmt.Printf("Processed: %d\nCreated: %d\n", processedCount, createdCount)
+	fmt.Printf("Indexing completed. Processed: %d, created: %d\n", processedCount, createdCount)
 }
