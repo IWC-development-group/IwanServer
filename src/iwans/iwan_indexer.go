@@ -146,6 +146,7 @@ func ProcessPages(db *sql.DB, root string, namespace string, forced bool) (int, 
 
 		return nil
 	})
+	fmt.Println("")
 
 	if createdCount != 0 {
 		CreateMultipleIndex(db, &pages)
