@@ -8,6 +8,7 @@ import (
     "regexp"
     "path/filepath"
 
+    "github.com/spf13/cobra"
 	"github.com/PuerkitoBio/goquery"
     "github.com/JohannesKaufmann/html-to-markdown/v2/converter"
     "github.com/JohannesKaufmann/html-to-markdown/v2/plugin/base"
@@ -47,7 +48,6 @@ func HtmlToMarkdown(conv *converter.Converter, source string, destination string
     }
 
     cleaned, err := CleanHtml(string(content))
-    //fmt.Println(cleaned)
     if err != nil {
         return err
     }
@@ -66,7 +66,7 @@ func IsHtml(filename string) bool {
     return extension == ".html" || extension == ".xhtml"
 }
 
-func ProcessPages(srcRoot string, destRoot string) (int, error) {
+func ProcessPages(srcRoot string, destRoot string, verboseFlag bool) (int, error) {
     conv := converter.NewConverter(
         converter.WithPlugins(
             base.NewBasePlugin(),
@@ -92,7 +92,12 @@ func ProcessPages(srcRoot string, destRoot string) (int, error) {
             return err
         }
 
-        fmt.Printf("Converting: %s to %s\n", path, destPath)
+        if verboseFlag {
+            fmt.Printf("Converting: %s to %s\n", path, destPath)
+        } else {
+            fmt.Printf("\rProcessing: %d", processedCount + 1)
+        }
+
         if err := HtmlToMarkdown(conv, path, destPath); err != nil {
             return err
         }
@@ -100,6 +105,7 @@ func ProcessPages(srcRoot string, destRoot string) (int, error) {
         processedCount++
         return nil
     })
+    if !verboseFlag { fmt.Println("") }
 
     if err != nil {
         return 0, err
@@ -108,21 +114,32 @@ func ProcessPages(srcRoot string, destRoot string) (int, error) {
     return processedCount, nil
 }
 
-func main() {
-    if len(os.Args) > 3 {
-        fmt.Println("No such args!")
-        os.Exit(0)
-    }
-
-    source := os.Args[1]
-    destination := os.Args[2]
+func RunConverter(source string, destination string, verboseFlag bool) {
     fmt.Println(source + " -> " + destination)
 
-    processedCount, err := ProcessPages(source, destination)
+    processedCount, err := ProcessPages(source, destination, verboseFlag)
     if err != nil {
         panic(err)
         os.Exit(0)
     }
 
-    fmt.Printf("Converted! Processed: %d\n", processedCount)
+    fmt.Printf("Convertation completed! Processed: %d\n", processedCount)
+}
+
+func main() {
+    var verbose bool
+    rootCmd := &cobra.Command{
+        Use: "iwanc <source> <destination>",
+        Short: "Converter utility for converting HTML pages to Markdown",
+        Args: cobra.ExactArgs(2),
+
+        Run: func(cmd *cobra.Command, args []string){
+            RunConverter(args[0], args[1], verbose)
+        },
+    }
+    rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output")
+
+    if err := rootCmd.Execute(); err != nil {
+        panic(err)
+    }
 }

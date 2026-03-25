@@ -16,7 +16,7 @@ type ModuleFunc func(db *sql.DB, argOffset int)
 func main() {
 	rootCmd := &cobra.Command{
 		Use: "iwans",
-		Short: "documentation server",
+		Short: "Native server for IwanClient to store Markdown manuals.",
 	}
 
 	execPath, _ := os.Executable()
