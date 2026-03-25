@@ -76,18 +76,6 @@ func IsPageExists(db *sql.DB, path string) (bool, error) {
 	}
 }
 
-func CreateIndex(db *sql.DB, pageInfo *IwanPage) {
-	_, err := db.Exec(`
-		INSERT INTO Pages (name, namespace, path)
-		VALUES ($1, $2, $3)
-	`, pageInfo.Name, pageInfo.Namespace, pageInfo.Path)
-
-	if err != nil {
-		fmt.Printf("Can't create index for page %s\n", pageInfo.Path)
-		panic(err)
-	}
-}
-
 func CreateMultipleIndex(db *sql.DB, pages *[]IwanPage) {
 	tx, err := db.Begin()
 	if err != nil {
@@ -135,7 +123,6 @@ func ProcessPages(db *sql.DB, root string, namespace string, forced bool) (int, 
 			if firstRoot {
 				firstRoot = false
 			} else if hint.Namespace != "" {
-				//fmt.Printf("Trapped on hinted directory: %s\n", path)
 				return filepath.SkipDir
 			}
 		}

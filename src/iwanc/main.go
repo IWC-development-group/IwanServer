@@ -57,7 +57,6 @@ func HtmlToMarkdown(conv *converter.Converter, source string, destination string
         return err
     }
 
-    //fmt.Println(markdown)
     return os.WriteFile(destination, []byte(markdown), 0644)
 }
 
