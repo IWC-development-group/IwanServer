@@ -146,7 +146,6 @@ func ProcessPages(db *sql.DB, root string, namespace string, forced bool) (int, 
 
 		return nil
 	})
-	fmt.Println("")
 
 	if createdCount != 0 {
 		CreateMultipleIndex(db, &pages)
@@ -157,12 +156,18 @@ func ProcessPages(db *sql.DB, root string, namespace string, forced bool) (int, 
 }
 
 func CollectHints(hints *[]IwanIndexHint, root string) error {
+	isRoot := true
 	err := filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if !info.IsDir() || err != nil { return nil }
 
 		hint := GetIndexHint(path)
 		if hint.Namespace != "" {
-			*hints = append(*hints, hint)
+			if isRoot {
+				(*hints)[0] = hint
+				isRoot = false
+			} else {
+				*hints = append(*hints, hint)
+			}
 		}
 
 		return nil
@@ -175,11 +180,12 @@ func RunIndexing(db *sql.DB, root string, namespace string) (int, int, error) {
 	var hints []IwanIndexHint
 	hints = append(hints, IwanIndexHint{root, namespace})
 	err := CollectHints(&hints, root)
+	
 	if err != nil { return 0, 0, err }
 	fmt.Printf("Hints collected: %d\n", len(hints))
 
 	if len(hints) <= 1 {
-		processedCount, createdCount, err := ProcessPages(db, root, namespace, true)
+		processedCount, createdCount, err := ProcessPages(db, root, hints[0].Namespace, true)
 		if err != nil { return 0, 0, err }
 		return processedCount, createdCount, nil
 	}
