@@ -16,6 +16,8 @@ import (
     "github.com/JohannesKaufmann/html-to-markdown/v2/plugin/table"
 )
 
+var version = "dev"
+
 func FixTags(htmlContent *string) {
     re := regexp.MustCompile(`<script([^>]*?)/>`)
     *htmlContent = re.ReplaceAllString(*htmlContent, `<script$1></script>`)
@@ -130,6 +132,7 @@ func main() {
     rootCmd := &cobra.Command{
         Use: "iwanc <source> <destination>",
         Short: "Converter utility for converting HTML pages to Markdown",
+        Version: version,
         Args: cobra.ExactArgs(2),
 
         Run: func(cmd *cobra.Command, args []string){

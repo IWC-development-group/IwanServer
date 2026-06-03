@@ -13,9 +13,12 @@ import (
 
 type ModuleFunc func(db *sql.DB, argOffset int)
 
+var version = ""
+
 func main() {
 	rootCmd := &cobra.Command{
 		Use: "iwans",
+		Version: version,
 		Short: "Native server for IwanClient to store Markdown manuals.",
 	}
 
