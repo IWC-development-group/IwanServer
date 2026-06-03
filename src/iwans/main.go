@@ -2,7 +2,7 @@ package main
 
 import (
 	"os"
-//	"fmt"
+	"fmt"
 	"path/filepath"
 	"github.com/spf13/cobra"
 
@@ -55,7 +55,27 @@ func main() {
 	indexCmd.Flags().StringVarP(&namespace, "namespace", "n", "global", "Documentation namespace")
 	indexCmd.Flags().BoolVarP(&forced, "force-ns", "f", false, "Force the indexer to ignore all hints")
 
-	rootCmd.AddCommand(serveCmd, indexCmd)
+	var namespaceDeletion string
+	deleteCmd := &cobra.Command{
+		Use: "delete",
+		Short: "Delete the specified page or namespace",
+		Run: func(cmd* cobra.Command, args []string){
+			if namespaceDeletion != "" {
+				DeleteNamespace(db, namespaceDeletion)
+				return
+			}
+			
+			if len(args) == 0 {
+				fmt.Println("No page specified!")
+				return
+			}
+
+			DeletePage(db, args[0])
+		},
+	}
+	deleteCmd.Flags().StringVarP(&namespaceDeletion, "namespace", "n", "", "Delete the specified namespace. If set, page name will be ignored")
+
+	rootCmd.AddCommand(serveCmd, indexCmd, deleteCmd)
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)
 	}

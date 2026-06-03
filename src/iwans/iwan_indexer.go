@@ -206,6 +206,47 @@ func RunIndexing(db *sql.DB, root string, namespace string) (int, int, error) {
 	return totalProcessed, totalCreated, nil
 }
 
+func DeleteNamespace(db *sql.DB, namespace string) {
+	result, err := db.Exec(`DELETE FROM Pages WHERE namespace = ?`, namespace)
+	if err != nil {
+		panic(err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		panic(err)
+	}
+
+	if rowsAffected > 0 {
+		fmt.Printf("Removed namespace \"%s\", page count: %d", namespace, rowsAffected)
+	} else {
+		fmt.Printf("No namespace found with name \"%s\"!")
+	}
+}
+
+func DeletePage(db *sql.DB, pageFullName string) {
+	var page IwanPage
+	page.SetupInfoFromFullName("", pageFullName)
+
+	result, err := db.Exec(`DELETE FROM Pages WHERE name = ? AND namespace = ?`,
+		page.Name, page.Namespace)
+
+	if err != nil {
+		panic(err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		panic(err)
+	}
+
+	if rowsAffected > 0 {
+		fmt.Printf("Removed page \"%s\" (entrances: %d)", pageFullName, rowsAffected)
+	} else {
+		fmt.Printf("No page found with name \"%s\"", rowsAffected)
+	}
+}
+
 func IndexerMain(db *sql.DB, path string, namespace string, forced bool) {
 	root, absErr := filepath.Abs(path)
 	if absErr != nil { panic(absErr) }
