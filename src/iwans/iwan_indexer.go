@@ -210,11 +210,13 @@ func DeleteNamespace(db *sql.DB, namespace string) {
 	result, err := db.Exec(`DELETE FROM Pages WHERE namespace = ?`, namespace)
 	if err != nil {
 		panic(err)
+		return
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		panic(err)
+		return
 	}
 
 	if rowsAffected > 0 {
@@ -233,11 +235,13 @@ func DeletePage(db *sql.DB, pageFullName string) {
 
 	if err != nil {
 		panic(err)
+		return
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		panic(err)
+		return
 	}
 
 	if rowsAffected > 0 {
