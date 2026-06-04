@@ -76,9 +76,22 @@ func main() {
 			DeletePage(db, args[0])
 		},
 	}
-	deleteCmd.Flags().StringVarP(&namespaceDeletion, "namespace", "n", "", "Delete the specified namespace. If set, page name will be ignored")
+	deleteCmd.Flags().StringVarP(&namespaceDeletion, "namespace", "n", "", "Delete the specified namespace. If set, page name will be ignored"
 
-	rootCmd.AddCommand(serveCmd, indexCmd, deleteCmd)
+	relayCmd := &cobra.Command{
+		Use: "relay <url> <namespace/name>",
+		Short: "Add a page that will be relayed from HTTP-server or another IwanServer",
+		Run: func(cmd* cobra.Command, args []srting){
+			if len(args) < 2 {
+				fmt.Println("No such args!")
+				return
+			}
+
+			AddRelay(db, args[0], args[1])
+		}
+	}
+
+	rootCmd.AddCommand(serveCmd, indexCmd, deleteCmd, relayCmd)
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)
 	}
