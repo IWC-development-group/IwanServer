@@ -22,7 +22,7 @@ The Iwan API specification assumes the use of the HTTP protocol for transmitting
 ```
 
 ---
-> [!CAUTION]
+> [!IMPORTANT]
 > If no namespace specified for the page **it's namespace needs to be named as "global"!**
 ---
 
@@ -69,6 +69,33 @@ iwans index [manuals_directory] -n [namespace_name]
 If no namespace specified it will use "global" by default.
 
 Type `iwans -h` for details.
+
+## Hints
+To automatically determine namespaces of indexed pages, you can use hints.
+
+**Usage:**
+1) Place a file `hint.iwan` in the directory that you want to associate with a specific namespace.
+2) Open the hint file and write namespace name inside, then save.
+3) Run `iwan index [manuals_directory]`.
+
+**Example:**
+```
+my-docs/opengl
+├───es3.1
+│   ├───hint.iwan <-- contains es3.1
+│	└───...pages
+├───gl2
+│   ├───hint.iwan <-- contains gl2
+│	└───...pages
+└───gl4
+    ├───hint.iwan <-- contains gl4
+ 	└───...pages
+```
+
+---
+> [!CAUTION]
+> Note that hinted indexing requires the additional directory pass to collect all hints! If you don't want it, use `-f` flag to force a specific namespace. 
+---
 
 ## Converter
 This project also includes a converter utility to convert HTML pages to Markdown:
