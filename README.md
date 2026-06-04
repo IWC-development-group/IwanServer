@@ -21,10 +21,8 @@ The Iwan API specification assumes the use of the HTTP protocol for transmitting
 }
 ```
 
----
 > [!IMPORTANT]
 > If no namespace specified for the page **it's namespace needs to be named as "global"!**
----
 
 ### Listing pages in the specified namespace
 #### Request:
@@ -92,10 +90,28 @@ my-docs/opengl
  	└───...pages
 ```
 
----
 > [!CAUTION]
 > Note that hinted indexing requires the additional directory pass to collect all hints! If you don't want it, use `-f` flag to force a specific namespace. 
----
+
+## Relay
+Relaying is a feature that allows IwanServer to access pages by url instead of local file system path. For IwanClient, relayed pages will look similar to regular pages.
+
+**Adding page specified by url and full name:**
+```
+iwans relay [url] [namespace/name]
+```
+
+> [!NOTE]
+> Relaying pages from servers that do not use IwanAPI is also supported. In that case remote server must respond with raw Markdown.
+
+**Examples:**
+```bash
+# Adding native IwanAPI relay:
+iwans relay http://example-docs.com/?name=gl4/glBindBuffer example/somePage
+
+# Adding third-party page relaying
+iwans relay https://example-docs.com/gl4/glBindBuffer.md example/somePage
+```
 
 ## Converter
 This project also includes a converter utility to convert HTML pages to Markdown:
