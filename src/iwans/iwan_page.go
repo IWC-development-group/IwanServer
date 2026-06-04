@@ -38,9 +38,9 @@ func (page *IwanPage) GetFullName() string {
 }
 
 func readFromFile(path string) (string, error) {
-    content, err := os.ReadFile(page.Path)
+    content, err := os.ReadFile(path)
     if err != nil {
-        return nil, ErrCantReadFromFile
+        return "", ErrCantReadFromFile
     }
     return string(content), nil
 }

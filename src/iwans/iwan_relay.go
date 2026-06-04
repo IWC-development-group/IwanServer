@@ -6,6 +6,8 @@ import (
     "net/http"
     "errors"
     "encoding/json"
+    "strings"
+    "io"
 
     "database/sql"
     _ "github.com/ncruces/go-sqlite3/embed"
@@ -29,41 +31,41 @@ func IsUrl(line string) bool {
 	return u.Scheme != "" && u.Host != ""
 }
 
-func IsJson(contentType string) {
+func IsJson(contentType string) bool {
     return strings.Contains(contentType, "json")
 }
 
 /* Extracts content from JSON-formated string */
-func ExcractContent(content string) (string, error) {
+func ExcractContent(content []byte) (string, error) {
 	var result PosJsonResponse
 	err := json.Unmarshal(content, &result)
 	if err != nil {
 		return "", ErrNotIwanApi
 	}
 
-	return result.Content
+	return result.Content, nil
 }
 
 func readFromUrl(url string) (string, error) {
     resp, err := http.Get(url)
     if err != nil {
-        return nil, ErrCantAccess
+        return "", ErrCantAccess
     }
     defer resp.Body.Close()
 
     if resp.StatusCode != http.StatusOK {
-        return nil, ErrCantAccess
+        return "", ErrCantAccess
     }
 
     content, err := io.ReadAll(resp.Body)
     if err != nil {
-        return nil, ErrFailedToRead
+        return "", ErrFailedToRead
     }
 
-    strContent := string(content)
     if IsJson(resp.Header.Get("Content-Type")) {
-    	return ExcractContent(strContent)
+    	return ExcractContent(content)
     }
+    strContent := string(content)
 
     return strContent, nil
 }
