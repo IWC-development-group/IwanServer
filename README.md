@@ -82,13 +82,13 @@ To automatically determine namespaces of indexed pages, you can use hints.
 ```
 my-docs/opengl
 ├───es3.1
-│   ├───hint.iwan <-- contains es3.1
+│   ├───hint.iwan <-- contains "es3.1"
 │	└───...pages
 ├───gl2
-│   ├───hint.iwan <-- contains gl2
+│   ├───hint.iwan <-- contains "gl2"
 │	└───...pages
 └───gl4
-    ├───hint.iwan <-- contains gl4
+    ├───hint.iwan <-- contains "gl4"
  	└───...pages
 ```
 
