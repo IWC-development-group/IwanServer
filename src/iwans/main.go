@@ -55,8 +55,10 @@ func main() {
 			IndexerMain(db, path, namespace, forced)
 		},
 	}
-	indexCmd.Flags().StringVarP(&namespace, "namespace", "n", "global", "Documentation namespace")
-	indexCmd.Flags().BoolVarP(&forced, "force-ns", "f", false, "Force the indexer to ignore all hints")
+	indexCmd.Flags().StringVarP(&namespace, "namespace", "n","global",
+		"Documentation namespace")
+	indexCmd.Flags().BoolVarP(&forced, "force-ns", "f", false,
+		"Force the indexer to ignore all hints")
 
 	var namespaceDeletion string
 	deleteCmd := &cobra.Command{
@@ -76,7 +78,8 @@ func main() {
 			DeletePage(db, args[0])
 		},
 	}
-	deleteCmd.Flags().StringVarP(&namespaceDeletion, "namespace", "n", "", "Delete the specified namespace. If set, page name will be ignored")
+	deleteCmd.Flags().StringVarP(&namespaceDeletion, "namespace", "n", "",
+		"Delete the specified namespace. If set, page name will be ignored")
 
 	relayCmd := &cobra.Command{
 		Use: "relay <url> <namespace/name>",
