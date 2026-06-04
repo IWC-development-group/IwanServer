@@ -151,14 +151,19 @@ func PageHandler(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 
 	content, err := page.GetContent()
 	if err != nil {
-		RemovePage(db, id)
-		jsonReq := response.SetErrorDescription("Page indexed but not exists!")
+		if err == ErrCantReadFromFile {
+			RemovePage(db, id)
+			jsonReq := response.SetErrorDescription("Page indexed but not exists!")
+		} else {
+			jsonReq := response.SetErrorDescription(err.Error())
+		}
+		
 		w.Write(jsonReq)
 		return
 	}
-
+	
 	response.Status = "OK"
-	response.Content = string(content)
+	response.Content = content
 
 	jsonReq := IwanSerialize(response)
 	fmt.Fprintf(w, string(jsonReq))

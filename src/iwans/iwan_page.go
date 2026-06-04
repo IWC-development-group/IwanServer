@@ -3,7 +3,10 @@ import (
     "strings"
     "io/fs"
     "os"
+    "errors"
 )
+
+var ErrCantReadFromFile = errors.New("Can't read content from file!")
 
 type IwanPage struct {
     Name string
@@ -34,11 +37,17 @@ func (page *IwanPage) GetFullName() string {
     return page.Namespace + "/" + page.Name
 }
 
-func (page *IwanPage) GetContent() ([]byte, error) {
+func readFromFile(path string) (string, error) {
     content, err := os.ReadFile(page.Path)
     if err != nil {
-        return nil, err
+        return nil, ErrCantReadFromFile
     }
+    return string(content), nil
+}
 
-    return content, nil
+func (page *IwanPage) GetContent() (string, error) {
+    if IsUrl(page.Path) {
+        return readFromUrl(page.Path)
+    }
+    return readFromFile(page.Path)
 }
